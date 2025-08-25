@@ -4,11 +4,78 @@
 package com.github.awdf.Test3;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
+
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+
 class AppTest {
-    @Test void appHasAGreeting() {
-        App classUnderTest = new App();
-        assertNotNull(classUnderTest.getGreeting(), "app should have a greeting");
+    private Store secretStore;
+
+    @BeforeEach
+    public void setUp() {
+        secretStore = new Store();        
     }
+
+
+    @Test
+    @DisplayName("Should store and retrieve secret successfully")
+    public void testStoreAndRetrieveSecret() {
+        String key = "testKey";
+        String secret = "testSecret";
+        String storedKey = secretStore.storeSecret(key, secret);
+
+        assertEquals(key.toLowerCase(), storedKey, "Returned key should be normalized lowercase");
+        assertEquals(secret, secretStore.getSecret(storedKey), "Secret should be retrieved correctly");
+        assertEquals(1, secretStore.size(), "Store should contain one secret");
+        assertEquals(secretStore.getSecret("nonexistentKey"), null, "Nonexistent key should return null");
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"12345678901234567890+"})
+    @DisplayName("IllegalArgumentException should be thrown")
+    public void testIllegalArgumentException(String newKey) {
+        assertThrows(IllegalArgumentException.class, () -> {
+            secretStore.storeSecret(newKey, "testSecret");
+        }, "IllegalArgumentException should be thrown for null key");
+    }
+
+    @Test
+    @DisplayName("Should store and retrieve integer secret successfully")
+    public void testStoreAndRetrieveIntegerSecret() {
+        Integer key = 12345;
+        Integer nonExistentKey = 10;
+        String secret = "testSecret";
+
+        secretStore.storeSecret(key, secret);
+
+        assertEquals(secret, secretStore.getSecret(key), "Returned key should match stored key ");
+        assertEquals(1, secretStore.size(), "Store should contain one secret");
+        assertEquals(secretStore.getSecret(nonExistentKey), null, "Nonexistent key should return null");
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {-1, -2})
+    public void testIllegalArgumentExceptionForInteger(Integer newKey) {
+        assertThrows(IllegalArgumentException.class, () -> {
+            secretStore.storeSecret(newKey, "testSecret");
+            
+        }, "IllegalArgumentException should be thrown for null key");
+    }
+
+    @Test
+    public void testNullIntegerValue(){
+        Integer key = null;
+        String secret = "testSecret";
+
+        assertThrows(IllegalArgumentException.class, ()-> {
+            secretStore.storeSecret(key, secret);
+        }, "IllegalArgumentException should be thrown fornull");
+    }
+
 }
